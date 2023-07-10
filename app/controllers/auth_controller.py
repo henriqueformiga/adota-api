@@ -12,13 +12,13 @@ def login():
     password = login_data.password
 
     # Buscar o usuário no banco de dados pelo nome de usuário
-    user_data = current_app.db.users.find_one({'email': email})
+    user = current_app.db.users.find_one({'email': email})
+    user = User(user['name'], user['email'], user['password'])
 
-    if user_data:
-        user = User(user_data['name'], user_data['email'], user_data['password'])
+    if user:
         if user.check_password(password):
             access_token = create_access_token(identity=email)
-            return {'access_token': access_token}, 200
+            return {'token': access_token}, 200
 
     return {'error': 'Usuário não encontrado ou senha inválida'}, 401
 
@@ -34,8 +34,9 @@ def register():
         return {'error': 'Já existe um usuário com esse email'}, 400
 
     user = User(name, email, password)
+    user.hash_password()
 
     # Inserir o novo usuário no banco de dados
     current_app.db.users.insert_one({'email': user.email, 'password': user.password, 'name': user.name})
-
-    return {'message': 'User registered successfully'}, 201
+    access_token = create_access_token(identity=email)
+    return {'token': access_token }, 201
